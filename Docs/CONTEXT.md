@@ -1,5 +1,10 @@
 # UnderwaterExtraction - Development Context & Session Summary
 
+> **Not:** Güncel sistem durumu ve "şu an ne bitti / ne bekliyor" için
+> [`Docs/PROJECT_STATE.md`](./PROJECT_STATE.md) tek doğruluk kaynağıdır.
+> Bu dosya (CONTEXT.md) yalnızca büyük mimari kararlar/derin tasarım
+> referansı için tutulur, her session'da okunması gerekmez.
+
 ## 📋 Session Overview
 
 **Date:** 2026-07-24  

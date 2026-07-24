@@ -20,6 +20,7 @@ public class InjurySystem : MonoBehaviour
     private PlayerHealth playerHealth;
     private float severity; // 0 (healthy) .. 1 (near death)
     private float bandageEndTime;
+    private float previousHealth = -1f;
 
     public bool IsBandaging { get; private set; }
     public float MovementMultiplier => Mathf.Lerp(1f, minSpeedMultiplier, severity);
@@ -41,6 +42,11 @@ public class InjurySystem : MonoBehaviour
 
     private void HandleHealthChanged(float current, float max)
     {
+        // Getting hit while bandaging interrupts it — no free heals mid-fight
+        if (IsBandaging && previousHealth >= 0f && current < previousHealth)
+            CancelBandaging();
+        previousHealth = current;
+
         severity = max > 0f ? 1f - Mathf.Clamp01(current / max) : 0f;
     }
 
