@@ -38,9 +38,9 @@
 Assets/_Project/
 ├── Scripts/
 │   ├── Core/          - PlayerController, PlayerControllerIntegration, CameraSystem, InputManager
-│   ├── Systems/       - OxygenSystem, PlayerHealth, RefillStation, Inventory, Loot, Economy, Decompression
-│   ├── Combat/        - HarpoonWeapon, HarpoonProjectile, HarpoonBlocker
-│   ├── Data/          - SO_HarpoonData, SO_TankData (ScriptableObjects)
+│   ├── Systems/       - OxygenSystem, PlayerHealth, RefillStation, InventorySystem, WorldItemPickup, PanicState, InjurySystem, AdrenalineItem, Loot, Economy, Decompression
+│   ├── Combat/        - HarpoonWeapon, HarpoonProjectile, HarpoonBlocker, HarpoonPickup
+│   ├── Data/          - SO_ItemData, SO_ConsumableItemData, SO_HarpoonData, SO_TankData (ScriptableObjects)
 │   ├── Interfaces/    - IDamageable
 │   ├── AI/            - BotDiverAI, SharkBehavior, PatrolSystem, AIPerception
 │   ├── Extraction/    - ExtractionPoint, RunManager, SessionTimer, RaidInitializer

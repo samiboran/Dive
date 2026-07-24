@@ -25,6 +25,9 @@ public class InjurySystem : MonoBehaviour
     public bool IsBandaging { get; private set; }
     public float MovementMultiplier => Mathf.Lerp(1f, minSpeedMultiplier, severity);
 
+    /// <summary>0 (healthy) .. 1 (near death). Used by InventorySystem to gate bandage use.</summary>
+    public float Severity => severity;
+
     private void Awake()
     {
         playerHealth = GetComponent<PlayerHealth>();

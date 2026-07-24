@@ -1,7 +1,12 @@
 using UnityEngine;
 
+/// <summary>
+/// Zıpkın silahı verisi. SO_ItemData'dan türer ki envanter/loot sistemine
+/// diğer item'lar gibi girebilsin. WorldPrefab (base) drop edilen zıpkın
+/// item'ıdır; ProjectilePrefab ateşlenince uçan mermidir — ayrı kavramlar.
+/// </summary>
 [CreateAssetMenu(fileName = "SO_HarpoonData", menuName = "UnderwaterExtraction/Harpoon Data")]
-public class SO_HarpoonData : ScriptableObject
+public class SO_HarpoonData : SO_ItemData
 {
     [Header("Combat")]
     [SerializeField] private float damage = 35f;
