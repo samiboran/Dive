@@ -158,18 +158,18 @@ Docs/
 - Pitch Limits: -80 to 80
 
 **Known Issues (v0.1):**
-- [ ] Buoyancy feels unbalanced (down too hard)
-- [ ] Pitch rotates body (should be camera-only)
+- [x] Buoyancy feels unbalanced (down too hard) - rewritten as depth-based lerp (weaker near surface, stronger at depth), needs in-editor playtesting to tune values
+- [x] Pitch rotates body (should be camera-only) - camera now rotates independently on X, body only rotates on Y
 - [ ] No underwater visual effects
 - [ ] No audio feedback
-- [ ] No momentum/inertia
+- [x] No momentum/inertia - velocity now eases toward target via `acceleration`/`maxVelocity`
 
 **v0.2 Planned Improvements:**
-- [ ] Separate camera pitch from body rotation
-- [ ] Dynamic buoyancy based on depth/gear
+- [x] Separate camera pitch from body rotation - done in v0.1
+- [x] Dynamic buoyancy based on depth/gear - depth portion done in v0.1 (`waterSurfaceHeight`/`maxDepth` lerp); gear-based modifier still open
 - [ ] Underwater post-processing stack
 - [ ] Camera sway and head bob
-- [ ] Momentum-based movement
+- [x] Momentum-based movement - done in v0.1
 
 ### Planned Systems
 
@@ -263,16 +263,18 @@ Docs/
 - [x] Input System documented
 - [x] Naming conventions established
 - [x] CONTEXT.md structure defined
+- [x] PlayerController.cs v0.1 implemented (`Assets/_Project/Scripts/Core/PlayerController.cs`)
 
 ### 🔄 In Progress
-- [ ] PlayerController.cs implementation
+- [ ] Unity project creation (2022.3 LTS + URP) - script exists, project itself still needs to be created via Unity Hub/Editor
+- [ ] Input Actions asset creation (PlayerInputActions.inputactions)
+- [ ] Test scene creation and movement testing
 
 ### ⏭️ Next Session
-- Unity project creation
-- Input Actions setup
-- PlayerController implementation
-- Test scene creation
-- Movement testing
+- Create the actual Unity project (2022.3 LTS + URP) and drop this repo's `Assets/` into it
+- Input Actions asset setup (Move, Vertical, Look)
+- Wire up PR_Player prefab (Rigidbody, Capsule Collider, PlayerInput, PlayerController, child Camera)
+- Build test scene (water cube + ground) and playtest movement/buoyancy feel
 
 ---
 
