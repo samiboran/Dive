@@ -7,7 +7,8 @@ public enum InjuryType
     None,
     SharkBite,
     JellyfishSting,
-    Barotrauma
+    Barotrauma,
+    KnifeWound
 }
 
 public class InjurySystem : MonoBehaviour
@@ -15,6 +16,10 @@ public class InjurySystem : MonoBehaviour
     [Header("Shark Bite")]
     [SerializeField] private float sharkBleedDps = 3f;
     [SerializeField] private float sharkMovePenalty = 0.7f;
+
+    [Header("Knife Wound (BotDiverAI)")]
+    [SerializeField] private float knifeBleedDps = 2f;
+    [SerializeField] private float knifeMovePenalty = 0.8f;
 
     [Header("Bandage")]
     [SerializeField] private float bandageApplyTime = 4f;
@@ -46,6 +51,10 @@ public class InjurySystem : MonoBehaviour
             case InjuryType.SharkBite:
                 MovementMultiplier = sharkMovePenalty;
                 bleedCoroutine = StartCoroutine(BleedCoroutine(sharkBleedDps));
+                break;
+            case InjuryType.KnifeWound:
+                MovementMultiplier = knifeMovePenalty;
+                bleedCoroutine = StartCoroutine(BleedCoroutine(knifeBleedDps));
                 break;
         }
 

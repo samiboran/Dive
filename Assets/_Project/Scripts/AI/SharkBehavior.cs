@@ -116,8 +116,11 @@ public class SharkBehavior : MonoBehaviour, IDamageable
         }
     }
 
+    // Kan lure: hem shark bite hem de BotDiverAI'nin bıçak/zıpkın yaralarından kanama sürüyor
     private bool PlayerIsBleeding =>
-        playerInjury != null && playerInjury.GetCurrentInjury() == InjuryType.SharkBite;
+        playerInjury != null &&
+        (playerInjury.GetCurrentInjury() == InjuryType.SharkBite ||
+         playerInjury.GetCurrentInjury() == InjuryType.KnifeWound);
 
     // Circling tetikleyicisi: doygunluk düşük VEYA oyuncu kanıyor (iki bağımsız OR)
     private bool ShouldCirclePlayer()

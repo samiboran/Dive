@@ -70,6 +70,19 @@ public class HarpoonProjectile : MonoBehaviour
             }
         }
 
+        // Hit-zone: "Limb" tag'li child collider'a çarpıldıysa uzuv vuruşu
+        // (BotDiverAI Spear tier oyuncuyu hedefler)
+        if (other.CompareTag("Limb"))
+        {
+            var limbHandler = other.GetComponentInParent<PlayerLimbHitHandler>();
+            if (limbHandler != null)
+            {
+                limbHandler.HandleLimbHit();
+                StickToSurface(transform.position, -fireDirection);
+                return;
+            }
+        }
+
         var damageable = other.GetComponent<IDamageable>();
         if (damageable != null)
         {
