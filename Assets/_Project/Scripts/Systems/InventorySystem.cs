@@ -95,50 +95,76 @@ public class InventorySystem : MonoBehaviour
             nearbyItem = null;
     }
 
+    /// <summary>
+    /// FIX: eskiden fazlalık tek bir slota (MaxStack ile sınırlı) konup geri
+    /// kalanı sessizce kaybediliyordu, üstelik yine de true (başarı) dönüyordu.
+    /// Artık iki aşamalı: önce hiçbir şeyi değiştirmeden "hepsi sığar mı?" diye
+    /// dener (occupancy'nin geçici kopyası üzerinde), ancak hepsi sığıyorsa
+    /// gerçekten uygular. Böylece kısmi/atomik olmayan bir ekleme StashSystem.
+    /// WithdrawTo() gibi "false dönerse hiçbir şey değişmedi" varsayan
+    /// çağıranlarda çiftleme/veri kaybına yol açmaz.
+    /// </summary>
     public bool TryAdd(SO_ItemData item, int count)
     {
         if (item == null || count <= 0) return false;
 
-        // 1) Stack merge — grid yeri değişmez
+        int remaining = count;
+        var plannedMerges = new List<(InventorySlot slot, int add)>();
+        var plannedNewSlots = new List<(int x, int y, int amount)>();
+
+        // 1) Mevcut stack'lere ne kadarı sığar — henüz UYGULAMADAN hesapla
         if (item.IsStackable)
         {
             foreach (var slot in slots)
             {
+                if (remaining <= 0) break;
                 if (slot.Item == item && slot.Count < item.MaxStack)
                 {
-                    int add = Mathf.Min(count, item.MaxStack - slot.Count);
-                    slot.Count += add;
-                    count -= add;
-                    if (count <= 0)
-                    {
-                        OnInventoryChanged?.Invoke();
-                        return true;
-                    }
+                    int add = Mathf.Min(remaining, item.MaxStack - slot.Count);
+                    plannedMerges.Add((slot, add));
+                    remaining -= add;
                 }
             }
         }
 
-        // 2) Grid'de item boyutuna uyan boş alan ara
-        if (FindFreeRect(item.GridWidth, item.GridHeight, out int x, out int y))
+        // 2) Kalanı yeni grid slotlarına yerleştirebilir miyiz — occupancy'nin
+        // geçici bir kopyası üzerinde dene, gerçek grid'i henüz değiştirme
+        if (remaining > 0)
         {
-            var slot = new InventorySlot
+            bool[,] scratch = (bool[,])occupancy.Clone();
+
+            while (remaining > 0)
             {
-                Item = item,
-                Count = Mathf.Min(count, item.MaxStack),
-                GridX = x,
-                GridY = y
-            };
-            slots.Add(slot);
-            MarkCells(x, y, item.GridWidth, item.GridHeight, true);
-            OnInventoryChanged?.Invoke();
-            return true;
+                int stackSize = item.IsStackable ? Mathf.Min(remaining, item.MaxStack) : 1;
+
+                if (!FindFreeRect(scratch, item.GridWidth, item.GridHeight, out int x, out int y))
+                    break; // yer kalmadı
+
+                MarkCells(scratch, x, y, item.GridWidth, item.GridHeight, true);
+                plannedNewSlots.Add((x, y, stackSize));
+                remaining -= stackSize;
+            }
         }
 
-        return false;
+        if (remaining > 0)
+            return false; // tamamı sığmıyor — envanter DEĞİŞMEDEN false dön
+
+        // 3) Hepsi sığıyor — şimdi gerçekten uygula
+        foreach (var (slot, add) in plannedMerges)
+            slot.Count += add;
+
+        foreach (var (x, y, amount) in plannedNewSlots)
+        {
+            slots.Add(new InventorySlot { Item = item, Count = amount, GridX = x, GridY = y });
+            MarkCells(occupancy, x, y, item.GridWidth, item.GridHeight, true);
+        }
+
+        OnInventoryChanged?.Invoke();
+        return true;
     }
 
     /// <summary>Referans repodaki temel mantık: w×h'lik boş dikdörtgen taraması.</summary>
-    private bool FindFreeRect(int w, int h, out int outX, out int outY)
+    private bool FindFreeRect(bool[,] grid, int w, int h, out int outX, out int outY)
     {
         w = Mathf.Clamp(w, 1, gridWidth);
         h = Mathf.Clamp(h, 1, gridHeight);
@@ -147,7 +173,7 @@ public class InventorySystem : MonoBehaviour
         {
             for (int x = 0; x <= gridWidth - w; x++)
             {
-                if (IsRectFree(x, y, w, h))
+                if (IsRectFree(grid, x, y, w, h))
                 {
                     outX = x;
                     outY = y;
@@ -161,20 +187,20 @@ public class InventorySystem : MonoBehaviour
         return false;
     }
 
-    private bool IsRectFree(int startX, int startY, int w, int h)
+    private bool IsRectFree(bool[,] grid, int startX, int startY, int w, int h)
     {
         for (int y = startY; y < startY + h; y++)
             for (int x = startX; x < startX + w; x++)
-                if (occupancy[x, y])
+                if (grid[x, y])
                     return false;
         return true;
     }
 
-    private void MarkCells(int startX, int startY, int w, int h, bool occupied)
+    private void MarkCells(bool[,] grid, int startX, int startY, int w, int h, bool occupied)
     {
         for (int y = startY; y < startY + h; y++)
             for (int x = startX; x < startX + w; x++)
-                occupancy[x, y] = occupied;
+                grid[x, y] = occupied;
     }
 
     public void DropSlot(int index)
@@ -197,7 +223,7 @@ public class InventorySystem : MonoBehaviour
 
     private void RemoveSlot(InventorySlot slot)
     {
-        MarkCells(slot.GridX, slot.GridY, slot.Item.GridWidth, slot.Item.GridHeight, false);
+        MarkCells(occupancy, slot.GridX, slot.GridY, slot.Item.GridWidth, slot.Item.GridHeight, false);
         slots.Remove(slot);
     }
 

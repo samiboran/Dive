@@ -91,17 +91,30 @@ public class StashSystem : MonoBehaviour
             }
         }
 
-        // Kapasite kontrolü
-        if (slots.Count >= capacity)
+        // Kalan miktarı MaxStack'e göre böl, gerektiği kadar yeni slot aç
+        // (FIX: eskiden tek slota count'un tamamı, MaxStack sınırı olmadan
+        // konuyordu — WithdrawTo() bu slotu geri InventorySystem.TryAdd()'e
+        // verdiğinde MaxStack üstü bir stack sessizce budanabiliyordu)
+        bool storedAny = false;
+        while (count > 0)
         {
-            OnStashFull?.Invoke();
-            Debug.Log("[StashSystem] Depo dolu — upgrade gerekli.");
-            return false;
+            if (slots.Count >= capacity)
+            {
+                OnStashFull?.Invoke();
+                Debug.Log("[StashSystem] Depo dolu — upgrade gerekli.");
+                break;
+            }
+
+            int stackSize = item.IsStackable ? Mathf.Min(count, item.MaxStack) : 1;
+            slots.Add(new StashSlot { Item = item, Count = stackSize });
+            count -= stackSize;
+            storedAny = true;
         }
 
-        slots.Add(new StashSlot { Item = item, Count = count });
-        OnStashChanged?.Invoke();
-        return true;
+        if (storedAny)
+            OnStashChanged?.Invoke();
+
+        return count <= 0;
     }
 
     /// <summary>Stash'ten oyuncu envanterine çekme (dalış öncesi hazırlık).</summary>

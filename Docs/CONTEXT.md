@@ -40,7 +40,7 @@ Assets/_Project/
 │   ├── Core/          - PlayerController, PlayerControllerIntegration, PlayerHealth, IDamageable, InjurySystem, GameFlowController
 │   ├── Systems/       - OxygenSystem, RefillStation, InventorySystem, WorldItemPickup, PanicState, LootManager, LootSpawnPoint, ExtractionPoint, RunManager, StashSystem, ItemDatabase, SaveSystem, LiftBalloon, LiftBagDeployer, AirPocketVolume, DrowningHandler, SO_ItemData/SO_ConsumableItemData/SO_HarpoonData/SO_TankData/SO_LootTableData (ScriptableObjects)
 │   ├── Combat/        - HarpoonWeapon, HarpoonProjectile, HarpoonBlocker, HarpoonPickup moved to Systems/
-│   ├── AI/            - SharkBehavior (BotDiverAI, PatrolSystem, AIPerception henüz yok)
+│   ├── AI/            - SharkBehavior, BotDiverAI (PatrolSystem, AIPerception henüz yok)
 │   └── UI/            - GridInventoryUI, DraggableItemIcon, StashMenuUI (HUDController, InventoryUI HUD'u, MenuSystem, NotificationManager henüz yok)
 ├── Prefabs/           - PR_ prefix (e.g., PR_Player)
 ├── Scenes/            - MainMenu, Map_SunkenShip_01, Map_Reef_01, Hideout
