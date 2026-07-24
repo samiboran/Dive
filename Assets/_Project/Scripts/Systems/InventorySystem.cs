@@ -3,14 +3,20 @@ using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
-/// 5 slot'lu envanter. Etkileşim deseni projeyle aynı:
-/// trigger alanı + E tuşu (pickup), Q tuşu (seçili slotu drop).
+/// GRID tabanlı envanter (Görev 4 — unity-grid-inventory MIT reposunun
+/// grid/footprint mantığı referans alınarak bizim mimariye göre yazıldı).
 ///
-/// Event-driven: UI, OnInventoryChanged'e subscribe olur.
+/// - Item'lar SO_ItemData.GridWidth/GridHeight kadar hücre kaplar
+/// - Yerleşim kontrolü: bool[,] occupancy grid — üst üste binme olmaz
+/// - Liste API'si (Slots) korundu → RunManager/Consumable akışı etkilenmez
+///
+/// Etkileşim deseni aynı: E pickup, Q drop, 1-9 slot seçimi.
 /// </summary>
 public class InventorySystem : MonoBehaviour
 {
-    public const int SlotCount = 5;
+    [Header("Grid Configuration")]
+    [SerializeField] private int gridWidth = 3;   // 3x2 = 6 hücrelik dalış çantası
+    [SerializeField] private int gridHeight = 2;
 
     [Header("Interaction")]
     [SerializeField] private KeyCode interactKey = KeyCode.E;
@@ -21,53 +27,54 @@ public class InventorySystem : MonoBehaviour
     {
         public SO_ItemData Item;
         public int Count;
+        public int GridX;   // yerleşim sol-üst köşesi
+        public int GridY;
 
         public bool IsEmpty => Item == null;
     }
 
     private readonly List<InventorySlot> slots = new List<InventorySlot>();
+    private bool[,] occupancy; // [x, y]
 
     public event Action OnInventoryChanged;
     public event Action OnInventoryFull;
 
-    private WorldItemPickup nearbyItem; // trigger'daki item adayı
+    private WorldItemPickup nearbyItem;
     private int selectedSlot = 0;
 
     public IReadOnlyList<InventorySlot> Slots => slots;
     public int SelectedSlot => selectedSlot;
+    public int GridWidth => gridWidth;
+    public int GridHeight => gridHeight;
 
     private void Awake()
     {
-        for (int i = 0; i < SlotCount; i++)
-            slots.Add(new InventorySlot());
+        occupancy = new bool[gridWidth, gridHeight];
     }
 
     private void Update()
     {
-        // Slot seçimi (1-5 tuşları)
-        for (int i = 0; i < SlotCount; i++)
+        for (int i = 0; i < slots.Count && i < 9; i++)
         {
             if (Input.GetKeyDown(KeyCode.Alpha1 + i))
                 selectedSlot = i;
         }
 
-        // Pickup
         if (nearbyItem != null && Input.GetKeyDown(interactKey))
         {
             if (TryAdd(nearbyItem.ItemData, 1))
             {
-                nearbyItem.Consume(); // sahneden kaldır
+                nearbyItem.Consume();
                 nearbyItem = null;
             }
             else
             {
                 OnInventoryFull?.Invoke();
-                Debug.Log("[InventorySystem] Envanter dolu!");
+                Debug.Log("[InventorySystem] Envanter dolu — bu boyutta item için yer yok!");
             }
         }
 
-        // Drop
-        if (Input.GetKeyDown(dropKey))
+        if (Input.GetKeyDown(dropKey) && selectedSlot < slots.Count)
             DropSlot(selectedSlot);
     }
 
@@ -92,7 +99,7 @@ public class InventorySystem : MonoBehaviour
     {
         if (item == null || count <= 0) return false;
 
-        // 1) Stack'lenebiliyorsa önce mevcut stack'e ekle
+        // 1) Stack merge — grid yeri değişmez
         if (item.IsStackable)
         {
             foreach (var slot in slots)
@@ -111,19 +118,63 @@ public class InventorySystem : MonoBehaviour
             }
         }
 
-        // 2) Boş slot bul
-        foreach (var slot in slots)
+        // 2) Grid'de item boyutuna uyan boş alan ara
+        if (FindFreeRect(item.GridWidth, item.GridHeight, out int x, out int y))
         {
-            if (slot.IsEmpty)
+            var slot = new InventorySlot
             {
-                slot.Item = item;
-                slot.Count = Mathf.Min(count, item.MaxStack);
-                OnInventoryChanged?.Invoke();
-                return true;
-            }
+                Item = item,
+                Count = Mathf.Min(count, item.MaxStack),
+                GridX = x,
+                GridY = y
+            };
+            slots.Add(slot);
+            MarkCells(x, y, item.GridWidth, item.GridHeight, true);
+            OnInventoryChanged?.Invoke();
+            return true;
         }
 
         return false;
+    }
+
+    /// <summary>Referans repodaki temel mantık: w×h'lik boş dikdörtgen taraması.</summary>
+    private bool FindFreeRect(int w, int h, out int outX, out int outY)
+    {
+        w = Mathf.Clamp(w, 1, gridWidth);
+        h = Mathf.Clamp(h, 1, gridHeight);
+
+        for (int y = 0; y <= gridHeight - h; y++)
+        {
+            for (int x = 0; x <= gridWidth - w; x++)
+            {
+                if (IsRectFree(x, y, w, h))
+                {
+                    outX = x;
+                    outY = y;
+                    return true;
+                }
+            }
+        }
+
+        outX = -1;
+        outY = -1;
+        return false;
+    }
+
+    private bool IsRectFree(int startX, int startY, int w, int h)
+    {
+        for (int y = startY; y < startY + h; y++)
+            for (int x = startX; x < startX + w; x++)
+                if (occupancy[x, y])
+                    return false;
+        return true;
+    }
+
+    private void MarkCells(int startX, int startY, int w, int h, bool occupied)
+    {
+        for (int y = startY; y < startY + h; y++)
+            for (int x = startX; x < startX + w; x++)
+                occupancy[x, y] = occupied;
     }
 
     public void DropSlot(int index)
@@ -131,10 +182,6 @@ public class InventorySystem : MonoBehaviour
         var slot = slots[index];
         if (slot.IsEmpty) return;
 
-        // FIX: log'dan önce isim referansını al — slot.Item aşağıda null'a çekiliyor
-        string droppedItemName = slot.Item.ItemName;
-
-        // Sahneye world prefab bırak — oyuncunun önüne
         if (slot.Item.WorldPrefab != null)
         {
             Vector3 dropPos = transform.position + transform.forward * 1.5f;
@@ -143,13 +190,15 @@ public class InventorySystem : MonoBehaviour
 
         slot.Count--;
         if (slot.Count <= 0)
-        {
-            slot.Item = null;
-            slot.Count = 0;
-        }
+            RemoveSlot(slot);
 
         OnInventoryChanged?.Invoke();
-        Debug.Log($"[InventorySystem] {droppedItemName} bırakıldı (slot {index}).");
+    }
+
+    private void RemoveSlot(InventorySlot slot)
+    {
+        MarkCells(slot.GridX, slot.GridY, slot.Item.GridWidth, slot.Item.GridHeight, false);
+        slots.Remove(slot);
     }
 
     /// <summary>
@@ -157,6 +206,8 @@ public class InventorySystem : MonoBehaviour
     /// </summary>
     public bool UseSelectedConsumable()
     {
+        if (selectedSlot >= slots.Count) return false;
+
         var slot = slots[selectedSlot];
         if (slot.Item is not SO_ConsumableItemData consumable) return false;
 
@@ -172,10 +223,7 @@ public class InventorySystem : MonoBehaviour
         {
             slot.Count--;
             if (slot.Count <= 0)
-            {
-                slot.Item = null;
-                slot.Count = 0;
-            }
+                RemoveSlot(slot);
             OnInventoryChanged?.Invoke();
         }
         return used;
@@ -206,17 +254,11 @@ public class InventorySystem : MonoBehaviour
         return true;
     }
 
-    /// <summary>
-    /// Tüm slotları boşaltır (RunManager extraction/ölüm akışı kullanır).
-    /// UI güncellemesi için OnInventoryChanged tetiklenir.
-    /// </summary>
+    /// <summary>RunManager extraction/ölüm akışı kullanır — grid de temizlenir.</summary>
     public void ClearAll()
     {
-        foreach (var slot in slots)
-        {
-            slot.Item = null;
-            slot.Count = 0;
-        }
+        slots.Clear();
+        occupancy = new bool[gridWidth, gridHeight];
         OnInventoryChanged?.Invoke();
     }
 

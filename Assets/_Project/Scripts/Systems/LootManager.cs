@@ -1,66 +1,64 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
-/// Zon/oda bazlı loot spawn'ı. Weighted random seçim yapar,
-/// item'ları mevcut WorldItemPickup prefab sistemiyle sahneye koyar.
-/// Yeni bir pickup mekanizması YOK — InventorySystem ile bire bir uyumlu.
-///
-/// Kurulum:
-/// 1) Sahneye boş GameObject'ler koy, üzerine LootSpawnPoint ekle (aşağıda)
-/// 2) Her zon/oda için bir SO_LootTableData asset'i oluştur
-/// 3) Bu manager'a zon başına (table + spawnPoint listesi) tanımla
+/// v2 — LootSpawnPoint marker tabanlı spawn.
+/// Her nokta kendi table'ını ve density'sini getirir (Floor 1/2/3: %30/%60/%90).
+/// Weighted random: SO_ItemData.RarityWeight üzerinden (common/uncommon/rare).
+/// Spawn edilen item mevcut WorldItemPickup prefab'ı olarak konur.
 /// </summary>
 public class LootManager : MonoBehaviour
 {
-    [System.Serializable]
-    public class LootZone
+    public static LootManager Instance { get; private set; }
+
+    private readonly List<LootSpawnPoint> spawnPoints = new List<LootSpawnPoint>();
+
+    public event Action<int> OnLootSpawned; // toplam spawn sayısı (debug/UI)
+
+    private void Awake()
     {
-        public string ZoneName = "Zone";
-        public SO_LootTableData LootTable;
-        public List<Transform> SpawnPoints = new List<Transform>();
-
-        [Tooltip("Bir spawn noktasında item çıkma temel olasılığı (0-1). DensityMultiplier ile çarpılır.")]
-        [Range(0f, 1f)] public float BaseSpawnChance = 0.6f;
+        if (Instance != null && Instance != this)
+        {
+            Destroy(gameObject);
+            return;
+        }
+        Instance = this;
     }
-
-    [SerializeField] private List<LootZone> zones = new List<LootZone>();
-    [SerializeField] private bool spawnOnStart = true;
 
     private void Start()
     {
-        if (spawnOnStart)
-            SpawnAllZones();
+        // SpawnPoint'ler aynı frame'de kendini kaydeder; spawn bir frame sonra
+        Invoke(nameof(SpawnAll), 0.05f);
     }
 
-    public void SpawnAllZones()
+    public void RegisterSpawnPoint(LootSpawnPoint point)
     {
-        foreach (var zone in zones)
-            SpawnZone(zone);
+        if (!spawnPoints.Contains(point))
+            spawnPoints.Add(point);
     }
 
-    public void SpawnZone(LootZone zone)
+    public void SpawnAll()
     {
-        if (zone.LootTable == null || zone.LootTable.Items == null || zone.LootTable.Items.Length == 0)
+        int spawned = 0;
+
+        foreach (var point in spawnPoints)
         {
-            Debug.LogWarning($"[LootManager] '{zone.ZoneName}' için loot table boş.");
-            return;
-        }
+            if (point == null || point.LootTable == null) continue;
 
-        float spawnChance = Mathf.Clamp01(zone.BaseSpawnChance * zone.LootTable.DensityMultiplier);
+            // Density: noktanın base chance'i × table'ın multiplier'ı
+            float chance = Mathf.Clamp01(point.BaseSpawnChance * point.LootTable.DensityMultiplier);
+            if (UnityEngine.Random.value > chance) continue;
 
-        foreach (var point in zone.SpawnPoints)
-        {
-            if (point == null) continue;
-
-            // Yoğunluk kontrolü — bu noktada item çıkacak mı?
-            if (Random.value > spawnChance) continue;
-
-            SO_ItemData item = RollWeightedItem(zone.LootTable);
+            SO_ItemData item = RollWeightedItem(point.LootTable);
             if (item == null) continue;
 
-            SpawnItem(item, point.position, point.rotation);
+            if (SpawnItem(item, point.transform.position, point.transform.rotation))
+                spawned++;
         }
+
+        OnLootSpawned?.Invoke(spawned);
+        Debug.Log($"[LootManager] {spawned}/{spawnPoints.Count} noktada loot spawn edildi.");
     }
 
     /// <summary>RarityWeight'e göre ağırlıklı rastgele seçim.</summary>
@@ -73,7 +71,7 @@ public class LootManager : MonoBehaviour
             return null;
         }
 
-        int roll = Random.Range(0, totalWeight);
+        int roll = UnityEngine.Random.Range(0, totalWeight);
         foreach (var item in table.Items)
         {
             if (item == null) continue;
@@ -82,24 +80,25 @@ public class LootManager : MonoBehaviour
                 return item;
         }
 
-        return null; // float yuvarlama güvenliği
+        return null;
     }
 
-    private void SpawnItem(SO_ItemData item, Vector3 position, Quaternion rotation)
+    private bool SpawnItem(SO_ItemData item, Vector3 position, Quaternion rotation)
     {
         if (item.WorldPrefab == null)
         {
             Debug.LogWarning($"[LootManager] '{item.ItemName}' WorldPrefab'ı tanımlı değil — spawn atlandı.");
-            return;
+            return false;
         }
 
         GameObject obj = Instantiate(item.WorldPrefab, position, rotation);
 
-        // WorldPrefab'ın WorldItemPickup'ı doğru SO'ya işaret etsin diye garanti altına al
-        var pickup = obj.GetComponent<WorldItemPickup>();
-        if (pickup == null)
+        if (obj.GetComponent<WorldItemPickup>() == null)
         {
             Debug.LogWarning($"[LootManager] '{item.ItemName}' prefab'ında WorldItemPickup yok — InventorySystem bunu alamaz!");
+            return false;
         }
+
+        return true;
     }
 }

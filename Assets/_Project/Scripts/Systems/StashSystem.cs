@@ -12,8 +12,7 @@ using UnityEngine;
 /// Upgrade: UpgradeStorageTier() slot sayısını artırır (Phase 3 economy
 /// bağlanana kadar sabit tier'lar).
 ///
-/// Kalıcılık: şu an bellek-içi; save/load (JSON) ayrı görev — bu sınıf
-/// ToSaveData()/FromSaveData() hook'larına hazır yapıda.
+/// Kalıcılık: şu an bellek-içi; save/load (JSON) ayrı görev.
 /// </summary>
 public class StashSystem : MonoBehaviour
 {
