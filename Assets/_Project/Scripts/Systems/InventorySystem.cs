@@ -206,6 +206,20 @@ public class InventorySystem : MonoBehaviour
         return true;
     }
 
+    /// <summary>
+    /// Tüm slotları boşaltır (RunManager extraction/ölüm akışı kullanır).
+    /// UI güncellemesi için OnInventoryChanged tetiklenir.
+    /// </summary>
+    public void ClearAll()
+    {
+        foreach (var slot in slots)
+        {
+            slot.Item = null;
+            slot.Count = 0;
+        }
+        OnInventoryChanged?.Invoke();
+    }
+
     public float GetTotalWeight()
     {
         float total = 0f;

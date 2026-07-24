@@ -38,12 +38,12 @@
 Assets/_Project/
 ├── Scripts/
 │   ├── Core/          - PlayerController, PlayerControllerIntegration, CameraSystem, InputManager
-│   ├── Systems/       - OxygenSystem, PlayerHealth, RefillStation, InventorySystem, WorldItemPickup, PanicState, InjurySystem, AdrenalineItem, Loot, Economy, Decompression
+│   ├── Systems/       - OxygenSystem, PlayerHealth, RefillStation, InventorySystem, WorldItemPickup, PanicState, InjurySystem, AdrenalineItem, LootManager, Economy, Decompression
 │   ├── Combat/        - HarpoonWeapon, HarpoonProjectile, HarpoonBlocker, HarpoonPickup
-│   ├── Data/          - SO_ItemData, SO_ConsumableItemData, SO_HarpoonData, SO_TankData (ScriptableObjects)
+│   ├── Data/          - SO_ItemData, SO_ConsumableItemData, SO_HarpoonData, SO_TankData, SO_LootTableData (ScriptableObjects)
 │   ├── Interfaces/    - IDamageable
 │   ├── AI/            - BotDiverAI, SharkBehavior, PatrolSystem, AIPerception
-│   ├── Extraction/    - ExtractionPoint, RunManager, SessionTimer, RaidInitializer
+│   ├── Extraction/    - ExtractionPoint, RunManager
 │   └── UI/            - HUDController, InventoryUI, MenuSystem, NotificationManager
 ├── Prefabs/           - PR_ prefix (e.g., PR_Player)
 ├── Scenes/            - MainMenu, Map_SunkenShip_01, Map_Reef_01, Hideout

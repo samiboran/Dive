@@ -29,8 +29,11 @@
 | SO_HarpoonData / SO_TankData | `Data/SO_HarpoonData.cs`, `Data/SO_TankData.cs` | `SO_ItemData`'dan türer (envanter/loot uyumlu) — sınıflar hazır, asset instance'ları henüz Editor'de oluşturulmadı |
 | SO_ItemData / SO_ConsumableItemData | `Data/SO_ItemData.cs`, `Data/SO_ConsumableItemData.cs` | Envanterdeki tüm item'ların base'i; Consumable alt sınıfı Bandage/AdrenalineShot/SpareTank tiplerini taşır |
 | WorldItemPickup | `Systems/WorldItemPickup.cs` | Sahnede duran alınabilir item; InventorySystem trigger'ı bunu bulur, drop edilenler de buradan spawn olur |
-| InventorySystem | `Systems/InventorySystem.cs` | 5 slot, E ile pickup / Q ile drop, stack'leme, `UseSelectedConsumable()` ile Bandage/AdrenalineShot/SpareTank'ı InjurySystem/PanicState/OxygenSystem'e delege eder |
+| InventorySystem | `Systems/InventorySystem.cs` | 5 slot, E ile pickup / Q ile drop, stack'leme, `UseSelectedConsumable()` ile Bandage/AdrenalineShot/SpareTank'ı InjurySystem/PanicState/OxygenSystem'e delege eder, `ClearAll()` (RunManager kullanır) |
 | HarpoonPickup | `Combat/HarpoonPickup.cs` | Saplı zıpkını E ile toplar → `HarpoonProjectile.PickUp()` artık gerçekten çağrılıyor |
+| LootManager | `Systems/LootManager.cs`, `Data/SO_LootTableData.cs` | Zon bazlı, `RarityWeight`'e göre ağırlıklı rastgele item seçimi, `WorldItemPickup` ile spawn |
+| ExtractionPoint | `Extraction/ExtractionPoint.cs` | Trigger + aktivasyon timer'ı (alandan çıkarsa iptal), `OnExtractionComplete` event'i |
+| RunManager | `Extraction/RunManager.cs` | Dalış başlatma, extraction'da envanter→stash transferi, ölümde envanter kaybı (gear korunur) |
 
 ## 🔄 Şu An Devam Eden
 
@@ -38,18 +41,20 @@
 
 ## ⏭️ Sıradaki Öncelik (Phase 1 tamamlanması için)
 
-1. LootManager (procedural spawn, `SO_ItemData.RarityWeight` ile uyumlu)
-2. ExtractionPoint (tek çıkış, aktivasyon timer)
-3. RunManager (dalış init, ölümde gear kaybı, stash)
-4. Weight-based carry capacity (InventorySystem.GetTotalWeight() zaten var, hareket/oxygen'e henüz bağlanmadı)
+1. Weight-based carry capacity (InventorySystem.GetTotalWeight() zaten var, hareket/oxygen'e henüz bağlanmadı)
+2. AI: SharkBehavior, BotDiverAI (Phase 2 kapsamı ama Phase 1 test sahnesi için erken bir düşman gerekebilir)
+3. UI: HUDController, InventoryUI (O2/panik/injury/ammo/extraction timer'ı görselleştirmek için)
+4. Test sahnesi: en az 1 loot zone (3+ spawn point) + 1 ExtractionPoint + RunManager kurup uçtan uca playtest
 
 ## ⚠️ Bilinen Sorunlar / Riskler
 
 - `depthConsumptionCurve` (OxygenSystem) inspector'da elle ayarlanmalı, kod tarafında default değeri yok
 - `"Pickup"` layer'ı Unity Editor'de manuel oluşturulmalı (Tags & Layers)
-- `SO_HarpoonData`/`SO_TankData`/`SO_ItemData`/`SO_ConsumableItemData` asset instance'ları henüz oluşturulmadı — prefab'lara atanmadan `HarpoonWeapon`/`OxygenSystem` null referansla çalışır (`Fire()` NullReferenceException atar)
+- `SO_HarpoonData`/`SO_TankData`/`SO_ItemData`/`SO_ConsumableItemData`/`SO_LootTableData` asset instance'ları henüz oluşturulmadı — prefab'lara atanmadan `HarpoonWeapon`/`OxygenSystem` null referansla çalışır (`Fire()` NullReferenceException atar)
+- `SO_TankData`/`SO_HarpoonData` inheritance refactor'ünden sonra, bu tiplerden önceden oluşturulmuş asset varsa Inspector'da `ItemName`/`Weight`/`WorldPrefab` alanlarının yeniden doldurulması gerekebilir (henüz asset oluşturulmadığı için şu an teorik risk)
 - `PanicState`/`InjurySystem`/`AdrenalineItem`'ın sayısal varsayılanları (panik yükselme/düşme oranı, hız/nişan çarpanları, bandaj süresi, adrenalin bağışıklık süresi) placeholder — in-editor playtest ile ayarlanmalı
-- **Farklı AI session'ları arasında API senkron kontrolü şart:** bir önceki teslimatta `InventorySystem.cs`, gerçek `InjurySystem`/`PanicState` API'leriyle uyuşmayan metotlar varsayıyordu (`GetCurrentInjury()`/`InjuryType`/`StartBandage()`/`UseAdrenalineShot()` — hiçbiri repoda yok). Gerçek API'lere (`Severity`, `IsBandaging`, `StartBandaging()`, `ApplyAdrenaline(float)`) uyacak şekilde düzeltildi. Yeni bir AI session bir dosyayı "hazır" olarak teslim ettiğinde, referans verdiği tiplerin bu dosyadaki ✅ tabloyla birebir eştiğini doğrulamadan uygulama — derlenmeyebilir.
+- LootManager test sahnesi kurulmadı — en az 1 zon + birkaç spawn point ile doğrulanmalı
+- **Farklı AI session'ları arasında API senkron kontrolü şart:** GPT tarafından ardışık iki teslimatta da `InventorySystem.cs`, gerçek `InjurySystem`/`PanicState` API'leriyle uyuşmayan metotlar varsaydı (`GetCurrentInjury()`/`InjuryType`/`StartBandage()`/`UseAdrenalineShot()` — hiçbiri repoda yok; gerçek API'ler: `Severity`, `IsBandaging`, `StartBandaging()`, `ApplyAdrenaline(float)`). Her iki seferde de bu dosya olduğu gibi uygulanmadı, sadece gerçekten yeni olan kısımlar (`ClearAll()`) mevcut düzeltilmiş dosyaya taşındı. Aynı şekilde `HarpoonWeapon.cs` ve `PlayerControllerIntegration.cs` de art arda iki teslimatta, bu depodaki panik-nişan sapması ve ortak derinlik referansı fix'lerinden önceki eski haliyle geldi — uygulanmadı. Yeni bir AI session bir dosyayı "hazır" olarak teslim ettiğinde, referans verdiği tiplerin bu dosyadaki ✅ tabloyla birebir eştiğini doğrulamadan uygulama.
 
 ## 🧱 Kalıcı Mimari Kararlar (değişmeyecek varsayımlar)
 
