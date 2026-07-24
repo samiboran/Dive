@@ -1,19 +1,21 @@
 using UnityEngine;
 
-/// <summary>
-/// Attach to objects/gear that should intercept an incoming harpoon
-/// before it can reach the entity behind it (e.g. a raised shield).
-/// HarpoonProjectile destroys itself right after calling BlockHarpoon().
-/// </summary>
 public class HarpoonBlocker : MonoBehaviour
 {
-    [SerializeField] private GameObject blockVfxPrefab;
+    [SerializeField] private GameObject scrapPrefab;
 
     public void BlockHarpoon(HarpoonProjectile projectile)
     {
-        Debug.Log($"[HarpoonBlocker] Blocked harpoon from {(projectile.Owner != null ? projectile.Owner.name : "unknown")}.");
+        // Item consume (bu script'in bağlı olduğu item'ı yok et)
+        Destroy(gameObject);
 
-        if (blockVfxPrefab != null)
-            Instantiate(blockVfxPrefab, projectile.transform.position, Quaternion.identity);
+        // Scrap spawn
+        if (scrapPrefab != null)
+        {
+            Instantiate(scrapPrefab, transform.position, Quaternion.identity);
+            Instantiate(scrapPrefab, transform.position + Vector3.up * 0.5f, Quaternion.identity);
+        }
+
+        Debug.Log("[HarpoonBlocker] Harpoon blocked — both converted to scrap.");
     }
 }

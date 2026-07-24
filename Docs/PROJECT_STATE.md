@@ -8,7 +8,7 @@
 > güncellenir; tek doğruluk kaynağı budur.
 
 **Son güncelleme:** 2026-07-24
-**Mevcut faz:** Phase 1 — Core Gameplay Loop
+**Mevcut faz:** Phase 1 — Core Gameplay Loop ✅ (kod tamam, sahne kurulumu + test kaldı) + Phase 2 AI başladı
 
 ---
 
@@ -16,58 +16,58 @@
 
 | Sistem | Dosya(lar) | Not |
 |---|---|---|
-| PlayerController v0.1 | `Core/PlayerController.cs` | Rigidbody buoyancy (yüzey referanslı, derinliğe göre lerp), yaw/pitch ayrımı (camera-only pitch), momentum/inertia, `SpeedMultiplier` entegrasyonu |
-| OxygenSystem | `Systems/OxygenSystem.cs` | Depth curve, movement/combat çarpanları, air pocket desteği |
-| PanicState | `Systems/PanicState.cs` | Ters mantık: panikte hız↑ (`MovementSpeedMultiplier`), nişan↓ (`AimAccuracyMultiplier`); adrenalin item ile iptal edilebilir |
-| AdrenalineItem | `Systems/AdrenalineItem.cs` | `PanicState.ApplyAdrenaline()`'i tetikler — paniği sıfırlar + geçici bağışıklık verir. InventorySystem henüz yok, şimdilik standalone trigger/`Use()` |
-| Harpoon Combat | `Combat/HarpoonWeapon.cs`, `Combat/HarpoonProjectile.cs` | Ammo sayacı, at-doldur, `PanicState.AimAccuracyMultiplier`'a bağlı nişan sapması, suya saplanma + toplama altyapısı |
-| HarpoonBlocker | `Combat/HarpoonBlocker.cs` | Gelen zıpkını engeller (şimdilik sadece VFX hook'u, kalkan/dayanıklılık mekaniği yok) |
-| InjurySystem | `Systems/InjurySystem.cs` | Cana orantılı hız cezası, bandaj (süre dolunca otomatik iyileştirir), hasar alınca bandaj otomatik kesintiye uğrar |
-| RefillStation | `Systems/RefillStation.cs` | O2 + zıpkın dolumu, E ile etkileşim, `GetComponent`→`GetComponentInChildren` fallback (silah player root'ta da child'da da olsa çalışır) |
-| PlayerHealth / IDamageable | `Systems/PlayerHealth.cs`, `Interfaces/IDamageable.cs` | Hasar arayüzü + stub can sistemi |
-| PlayerControllerIntegration | `Core/PlayerControllerIntegration.cs` | Oxygen/Panic/Injury ↔ hareket köprüsü, combat timer, `SpeedMultiplier` artık `PlayerController.ApplyMovement()`'ta gerçekten çarpılıyor |
-| SO_HarpoonData / SO_TankData | `Data/SO_HarpoonData.cs`, `Data/SO_TankData.cs` | `SO_ItemData`'dan türer (envanter/loot uyumlu), `[field: SerializeField]` property stiline geçti (SO_ItemData/SO_ConsumableItemData ile tutarlı). Tank artık `TierName`/`TierLevel` taşıyor, harpoon `HarpoonName` taşıyor — asset instance'ları henüz Editor'de oluşturulmadı |
-| SO_ItemData / SO_ConsumableItemData | `Data/SO_ItemData.cs`, `Data/SO_ConsumableItemData.cs` | Envanterdeki tüm item'ların base'i; Consumable alt sınıfı Bandage/AdrenalineShot/SpareTank tiplerini taşır |
-| WorldItemPickup | `Systems/WorldItemPickup.cs` | Sahnede duran alınabilir item; InventorySystem trigger'ı bunu bulur, drop edilenler de buradan spawn olur |
-| InventorySystem | `Systems/InventorySystem.cs` (v2, grid tabanlı) | Grid footprint (`SO_ItemData.GridWidth/GridHeight` kadar hücre), `occupancy` bool grid ile yerleşim kontrolü, E ile pickup / Q ile drop, stack'leme, `UseSelectedConsumable()` ile Bandage/AdrenalineShot/SpareTank'ı InjurySystem/PanicState/OxygenSystem'e delege eder, `ClearAll()` (RunManager kullanır). Liste API'si (`Slots`) korundu, RunManager/consumable akışı etkilenmedi |
-| HarpoonPickup | `Combat/HarpoonPickup.cs` | Saplı zıpkını E ile toplar → `HarpoonProjectile.PickUp()` artık gerçekten çağrılıyor |
-| LootManager | `Systems/LootManager.cs` (v2, marker tabanlı), `Systems/LootSpawnPoint.cs`, `Data/SO_LootTableData.cs` | `LootSpawnPoint` marker'ları kendini `LootManager.Instance`'a kaydeder, nokta başına table + density (Floor 1/2/3 ~%30/%60/%90), `RarityWeight`'e göre ağırlıklı rastgele item seçimi, `WorldItemPickup` ile spawn |
-| StashSystem | `Systems/StashSystem.cs` | Kalıcı ana depo, tier upgrade (20→40 slot), UI hook: `Slots` + `OnStashChanged`. Şu an bellek-içi; save/load henüz yok |
-| ExtractionPoint | `Extraction/ExtractionPoint.cs` | Trigger + aktivasyon timer'ı (alandan çıkarsa iptal), `OnExtractionComplete` event'i |
-| RunManager | `Extraction/RunManager.cs` | Dalış başlatma, extraction'da envanter→stash transferi, ölümde envanter kaybı (gear korunur) |
+| PlayerController v0.1 | `Core/PlayerController.cs` | Rigidbody buoyancy, yaw/pitch ayrımı, kamera pitch'i `PlayerController` içinde (`HandleRotation()`) yönetiliyor — ayrı bir CameraLook.cs yok |
+| OxygenSystem | `Systems/OxygenSystem.cs` | Depth curve, movement/combat çarpanları, air pocket, `RefillOxygen()` + `RefillFromSpareTank()`, zone effect stack'i (`ApplyZoneEffect`/`RemoveZoneEffect`) |
+| PanicState | `Systems/PanicState.cs` | v2 — eşik tabanlı: O2 ≤ panicThreshold otomatik panik başlatır/bitirir (`OxygenSystem.OnOxygenChanged` dinler), `MovementSpeedMultiplier`/`AimSwayMultiplier`/`AdsStabilityMultiplier`, `UseAdrenalineShot()` coroutine ile paniği sıfırlar + süreli bağışıklık |
+| Harpoon Combat | `Combat/HarpoonWeapon.cs`, `HarpoonProjectile.cs`, `HarpoonBlocker.cs` | Ammo sayacı, at-doldur, saplanma + `Systems/HarpoonPickup.cs` ile toplama. `HarpoonProjectile` artık "Head" tag'li collider'a çarpınca `SharkBehavior.HandleHeadShot()` çağırıyor (kafa vuruşu = kalıcı kaçış). `HarpoonBlocker` bloklanan zıpkını + kendini scrap'e çevirip yok ediyor. Panic-aim-spread coupling bu turda kaldırıldı (PanicState artık `AimAccuracyMultiplier` expose etmiyor; nişan sallantısı `AimSwayMultiplier`/`AdsStabilityMultiplier` üzerinden ayrı bir kamera/nişan script'ine devredilecek — henüz yok) |
+| InjurySystem | `Core/InjurySystem.cs` | v2 — Severity/float yerine ayrık `InjuryType` enum'u (None/SharkBite/JellyfishSting/Barotrauma). `ApplyInjury(type)` tek yaralanmayı kilitler, `sharkBleedDps` ile kanama, `StartBandage()`/`InterruptBandage()`. **Not:** bu sürümde hasar alınca bandaj otomatik kesilmiyor (eski davranıştı, v2'de yok — istenirse `PlayerHealth.OnHealthChanged`'a tekrar bağlanabilir) |
+| RefillStation | `Systems/RefillStation.cs` | O2 + zıpkın dolumu, E etkileşim, GetComponent/GetComponentInChildren fallback'li |
+| PlayerHealth / IDamageable | `Core/PlayerHealth.cs`, `Core/IDamageable.cs` | Hasar arayüzü + can sistemi (Interfaces/ ve eski Systems/ konumlarından Core/'a taşındı) |
+| PlayerControllerIntegration | `Core/PlayerControllerIntegration.cs` | Rigidbody hızından idle/swim/sprint, combat timer (OnFired+5sn), derinlik `PlayerController.DepthBelowSurface` ile paylaşılıyor (OxygenSystem/buoyancy aynı yüzey varsayımını kullanır), SpeedMultiplier = panic × injury × bandage × **ağırlık** (`weightSpeedCurve`, `OnOverweight` event'i) |
+| Grid Inventory | `Systems/InventorySystem.cs` | Grid footprint (`SO_ItemData.GridWidth/GridHeight` kadar hücre), `occupancy` bool grid ile yerleşim kontrolü, E ile pickup / Q ile drop, stack'leme, `UseSelectedConsumable()` ile Bandage/AdrenalineShot/SpareTank'ı InjurySystem/PanicState/OxygenSystem'e delege eder, `ConsumeSlot()` (drop spawn'sız tüketim — LiftBagDeployer kullanır), `ClearAll()`, `GetTotalWeight()` |
+| Item SO'ları | `Systems/SO_ItemData.cs`, `SO_TankData.cs`, `SO_HarpoonData.cs`, `SO_ConsumableItemData.cs` | Hepsi `SO_ItemData`'dan türetilmiş; GridWidth/Height + Rarity alanları var. Data/ klasöründen Systems/'e taşındı |
+| StashSystem | `Systems/StashSystem.cs` | Kalıcı depo, tier upgrade (20→40), `Slots` UI hook, `WithdrawTo()`, JSON save/load (`ItemDatabase` + `SaveSystem` üzerinden, her değişimde otomatik kayıt) |
+| Save/Load | `Systems/SaveSystem.cs`, `Systems/ItemDatabase.cs` | Jenerik JSON altyapısı (`Application.persistentDataPath`), item'lar isimle çözülüyor |
+| LootManager v2 | `Systems/LootManager.cs`, `LootSpawnPoint.cs`, `SO_LootTableData.cs` | Marker tabanlı, nokta başına table+density (Floor1/2/3: %30/%60/%90), RarityWeight weighted random |
+| ExtractionPoint | `Systems/ExtractionPoint.cs` | 8sn aktivasyon, alandan çıkınca iptal, kendini `RunManager.Instance`'a kaydeder (Extraction/ klasöründen Systems/'e taşındı) |
+| RunManager v3 | `Systems/RunManager.cs` | Extraction/ölüm akışı StashSystem'li; event'ler **`ResultPayload` taşır** (snapshot `ClearAll()`'dan ÖNCE alınır) |
+| GameFlowController | `Core/GameFlowController.cs` | Hideout/Diving/Results state, sahne geçişi (`SceneManager`), `BeginDive()`, `LastResult` `RunManager` payload'ından dolar |
+| Lift Bag Delivery | `Systems/LiftBalloon.cs`, `LiftBagDeployer.cs` | Derinliğe bağlı yükseliş süresi (30sn + 0.5sn/m), deploy/yükleme kendi O2'sinden maliyetli, Obstacle layer'ına takılma veya zıpkınla (IDamageable) patlama, düşen loot dibe saçılıp tekrar toplanabilir WorldItemPickup olur |
+| Stash UI | `UI/GridInventoryUI.cs`, `UI/DraggableItemIcon.cs`, `UI/StashMenuUI.cs` | Runtime'da çizilen grid panel, drag & drop ile envanter↔stash transferi, item'lar w×h kaplar. Panel-içi yeniden dizme (Tarkov tarzı) henüz yok |
+| DrowningHandler | `Systems/DrowningHandler.cs` | O2 bitince (`OnOxygenDepleted`) saniyede ayarlanabilir boğulma hasarı, O2 > 0 olunca durur |
+| AirPocketVolume | `Systems/AirPocketVolume.cs` | Trigger alanı — `OxygenSystem.EnterAirPocket()`/`ExitAirPocket()` tetikler (bu alanda O2 tüketilmez) |
+| SharkBehavior (AI) | `AI/SharkBehavior.cs` | Açlık döngüsü (satiety decay + periyodik feeding denemesi) + state machine (Patrol/Feeding/Circling/Attacking/Pursuing/Fleeing). Circling = tek görsel "tell" (4-8sn). Hit-zone: "Head" tag'li collider vuruşu kalıcı kaçış, gövde vuruşu geçici kaçış + tek geri dönüş hakkı. Kan lure: oyuncuda `InjuryType.SharkBite` varsa saldırganlık eşiği düşer. **Henüz sahnede kurulmadı/test edilmedi** — prefab, "Head" child collider + tag, Rigidbody kurulumu gerekiyor |
 
-## 🔄 Şu An Devam Eden
+## ⏭️ Sıradaki Öncelik — Phase 2
 
-- Gerçek Unity projesinin oluşturulması (ProjectSettings, Packages/manifest.json) — repoda şu an sadece `Assets/` altındaki scriptler var
+Phase 1 kod tarafı fiilen TAMAMLANDI. Kalan Phase 1 işi: sahnede kurulum + derleme testi.
 
-## ⏭️ Sıradaki Öncelik (Phase 1 tamamlanması için)
+1. Map blockout (Floor 1/2/3, spawn point'ler, obstacle'lar — LiftBalloon'un `Obstacle` layer kontrolü için de gerekli)
+2. SharkBehavior'ı sahnede kur ve playtest et (prefab + "Head" tag + Rigidbody + Player tag kontrolü)
+3. BotDiverAI (rakip dalgıç, HarpoonBlocker kullanımı) — henüz yazılmadı
+4. Panic-aim coupling'in yeni PanicState API'sine (AimSwayMultiplier/AdsStabilityMultiplier) göre bir nişan/kamera script'ine yeniden bağlanması — HarpoonWeapon şu an bundan bağımsız çalışıyor
 
-1. Weight-based carry capacity (InventorySystem.GetTotalWeight() zaten var, hareket/oxygen'e henüz bağlanmadı)
-2. Stash save/load (JSON kalıcılık — StashSystem hook'ları hazır)
-3. Stash UI (hook noktası hazır: `StashSystem.Slots`)
-4. AI: SharkBehavior, BotDiverAI (Phase 2 kapsamı ama Phase 1 test sahnesi için erken bir düşman gerekebilir)
-5. UI: HUDController, InventoryUI (O2/panik/injury/ammo/extraction timer'ı görselleştirmek için)
-6. Test sahnesi: en az 1 loot zone (3+ `LootSpawnPoint`) + 1 ExtractionPoint + RunManager kurup uçtan uca playtest
+## ⚠️ Bilinen Sorunlar / Kurulum Checklist
 
-## ⚠️ Bilinen Sorunlar / Riskler
-
-- `depthConsumptionCurve` (OxygenSystem) inspector'da elle ayarlanmalı, kod tarafında default değeri yok
-- `"Pickup"` layer'ı Unity Editor'de manuel oluşturulmalı (Tags & Layers)
-- `SO_HarpoonData`/`SO_TankData`/`SO_ItemData`/`SO_ConsumableItemData`/`SO_LootTableData` asset instance'ları henüz oluşturulmadı — prefab'lara atanmadan `HarpoonWeapon`/`OxygenSystem` null referansla çalışır (`Fire()` NullReferenceException atar)
-- `SO_TankData`/`SO_HarpoonData` inheritance refactor'ünden sonra, bu tiplerden önceden oluşturulmuş asset varsa Inspector'da `ItemName`/`Weight`/`WorldPrefab` alanlarının yeniden doldurulması gerekebilir (henüz asset oluşturulmadığı için şu an teorik risk)
-- `PanicState`/`InjurySystem`/`AdrenalineItem`'ın sayısal varsayılanları (panik yükselme/düşme oranı, hız/nişan çarpanları, bandaj süresi, adrenalin bağışıklık süresi) placeholder — in-editor playtest ile ayarlanmalı
-- LootManager test sahnesi kurulmadı — en az 1 zon + birkaç `LootSpawnPoint` ile doğrulanmalı
-- Grid envanter v2 sonrası SO asset'lerde `GridWidth/GridHeight` ve `Rarity` alanları doldurulmalı (default 1x1/Common)
-- RunManager hâlâ kendi bellek-içi stash'ini kullanıyor — `StashSystem.Instance`'a migrate edilmeli (küçük refactor)
-- **Farklı AI session'ları arasında API senkron kontrolü şart:** GPT tarafından ardışık iki teslimatta da `InventorySystem.cs`, gerçek `InjurySystem`/`PanicState` API'leriyle uyuşmayan metotlar varsaydı (`GetCurrentInjury()`/`InjuryType`/`StartBandage()`/`UseAdrenalineShot()` — hiçbiri repoda yok; gerçek API'ler: `Severity`, `IsBandaging`, `StartBandaging()`, `ApplyAdrenaline(float)`). Her iki seferde de bu dosya olduğu gibi uygulanmadı, sadece gerçekten yeni olan kısımlar (`ClearAll()`) mevcut düzeltilmiş dosyaya taşındı. Aynı şekilde `HarpoonWeapon.cs` ve `PlayerControllerIntegration.cs` de art arda iki teslimatta, bu depodaki panik-nişan sapması ve ortak derinlik referansı fix'lerinden önceki eski haliyle geldi — uygulanmadı. Yeni bir AI session bir dosyayı "hazır" olarak teslim ettiğinde, referans verdiği tiplerin bu dosyadaki ✅ tabloyla birebir eştiğini doğrulamadan uygulama.
+- `depthConsumptionCurve` (OxygenSystem) inspector'da elle ayarlanmalı
+- Tags & Layers: **"Pickup"**, **"Obstacle"** layer'ları ve **"Head"**, **"Player"** tag'leri manuel oluşturulmalı
+- `ItemDatabase` asset'i oluşturulmalı, tüm item SO'ları eklenmeli, `StashSystem`'e referans verilmeli (yoksa save yüklenemez, sadece uyarı loglar)
+- Grid envanter sonrası SO asset'lerde `GridWidth/GridHeight` + `Rarity` doldurulmalı (default 1x1/Common)
+- Stash UI için Canvas'a EventSystem + GraphicRaycaster (Unity otomatik ekler)
+- Panel içi drag-rearrange (Tarkov tarzı hücre değiştirme) yok — Phase 2 polish
+- InjurySystem v2'de bandaj, hasar alınca artık otomatik kesilmiyor (eski `InterruptBandage()` tetikleyicisi kaldırıldı) — istenirse yeniden bağlanmalı
+- SharkBehavior sahnede hiç kurulmadı — prefab/collider/tag setup + playtest gerekiyor
 
 ## 🧱 Kalıcı Mimari Kararlar (değişmeyecek varsayımlar)
 
 - Unity 2022.3 LTS + URP, `rb.velocity` (linearVelocity DEĞİL — Unity 6 API'si kullanılmıyor)
 - Hareket: Rigidbody + AddForce tabanlı (CharacterController KULLANILMIYOR)
-- Motor: Unity'de kalınıyor, Godot'a geçiş değerlendirilip reddedildi (bkz. CONTEXT.md Key Design Decisions)
-- Naming: PascalCase class/method, camelCase variable, `SO_` prefix (ScriptableObject), `PR_` prefix (prefab)
-- Üçüncü parti açık kaynak kod adapte edilirken önce lisans kontrol edilir (MIT/Apache tercih edilir), kod birebir kopyalanmaz — mantık bizim naming convention/mimarimize göre yeniden yazılır. (İlk uygulama: `kukumberman/unity-grid-inventory`, MIT doğrulandı, sadece grid/footprint mantığı referans alındı.)
+- Motor: Unity'de kalınıyor, Godot'a geçiş değerlendirilip reddedildi
+- Naming: PascalCase class/method, camelCase variable, `SO_` prefix, `PR_` prefix (prefab)
+- Event-driven loose coupling; etkileşim deseni her yerde trigger + E (`interactKey` serialize)
+- Klasörleme: `Core/` (player, entegrasyon, can, hasar arayüzü, oyun akışı), `Systems/` (SO item verileri dahil tüm oyun sistemleri), `Combat/`, `AI/`, `UI/` — `Data/`, `Interfaces/`, `Extraction/` klasörleri kaldırıldı, içerikleri yukarıdakilere taşındı
+- Üçüncü parti açık kaynak adapte edilirken önce lisans kontrol edilir (MIT/Apache tercih), kod birebir kopyalanmaz — mantık bizim mimariye göre yeniden yazılır (ilk uygulama: `kukumberman/unity-grid-inventory`, MIT)
+- Kapsam genişlemesi (roadmap'te olmayan yeni sistem) hiçbir AI'ın inisiyatifiyle değil, önce PROJECT_STATE.md üzerinden onaylanarak yapılır
 
 ---
 

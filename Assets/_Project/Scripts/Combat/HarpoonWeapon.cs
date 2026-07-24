@@ -12,19 +12,9 @@ public class HarpoonWeapon : MonoBehaviour
     [SerializeField] private int maxCarriedHarpoons = 6; // Taşınabilir toplam zıpkın
     [SerializeField] private int currentHarpoons = 6;
 
-    [Header("Panic-Aim Coupling")]
-    [SerializeField] private float maxSpreadAngleDegrees = 20f; // PanicState.AimAccuracyMultiplier=0 durumunda uygulanan sapma
-
     private float lastFireTime;
     private bool isReloading = false;
     private float reloadEndTime;
-    private PanicState panicState;
-
-    private void Awake()
-    {
-        // Silah oyuncunun root'unda veya bir child'ında olabilir
-        panicState = GetComponentInParent<PanicState>();
-    }
 
     public int CurrentHarpoons => currentHarpoons;
     public int MaxCarriedHarpoons => maxCarriedHarpoons;
@@ -68,20 +58,7 @@ public class HarpoonWeapon : MonoBehaviour
         OnFired?.Invoke();
         OnReloadStarted?.Invoke();
 
-        SpawnProjectile(ApplyPanicSpread(direction));
-    }
-
-    private Vector3 ApplyPanicSpread(Vector3 direction)
-    {
-        if (panicState == null) return direction;
-
-        float accuracy = panicState.AimAccuracyMultiplier; // 1 = perfect aim, lower = shakier
-        float spreadDegrees = maxSpreadAngleDegrees * (1f - accuracy);
-        if (spreadDegrees <= 0f) return direction;
-
-        Vector2 randomOffset = UnityEngine.Random.insideUnitCircle * spreadDegrees;
-        Quaternion spreadRotation = Quaternion.Euler(randomOffset.y, randomOffset.x, 0f);
-        return spreadRotation * direction;
+        SpawnProjectile(direction);
     }
 
     private void SpawnProjectile(Vector3 direction)

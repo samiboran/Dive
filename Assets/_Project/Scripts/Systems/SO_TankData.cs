@@ -1,7 +1,7 @@
 using UnityEngine;
 
 /// <summary>
-/// Oksijen tüpü verisi. SO_ItemData'dan türer (envanter + loot uyumluluğu).
+/// REFACTOR: Artık SO_ItemData'dan türüyor (envanter + loot uyumluluğu).
 /// ItemName/Weight/Icon/IsStackable/WorldPrefab/RarityWeight base'ten miras.
 /// Tank stack'lenmez → IsStackable = false (inspector'da default bırak).
 /// </summary>

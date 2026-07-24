@@ -214,7 +214,7 @@ public class InventorySystem : MonoBehaviour
         bool used = consumable.Type switch
         {
             ConsumableType.Bandage => UseBandage(),
-            ConsumableType.AdrenalineShot => UseAdrenaline(consumable.EffectAmount),
+            ConsumableType.AdrenalineShot => UseAdrenaline(),
             ConsumableType.SpareTank => UseSpareTank(consumable.EffectAmount),
             _ => false
         };
@@ -232,17 +232,16 @@ public class InventorySystem : MonoBehaviour
     private bool UseBandage()
     {
         var injury = GetComponent<InjurySystem>();
-        // Zaten bandajlanıyorsa veya yaralı değilse boşa harcama
-        if (injury == null || injury.IsBandaging || injury.Severity <= 0f) return false;
-        injury.StartBandaging();
+        if (injury == null || injury.GetCurrentInjury() == InjuryType.None) return false;
+        injury.StartBandage();
         return true;
     }
 
-    private bool UseAdrenaline(float duration)
+    private bool UseAdrenaline()
     {
         var panic = GetComponent<PanicState>();
         if (panic == null) return false;
-        panic.ApplyAdrenaline(duration);
+        panic.UseAdrenalineShot();
         return true;
     }
 
@@ -251,6 +250,25 @@ public class InventorySystem : MonoBehaviour
         var oxygen = GetComponent<OxygenSystem>();
         if (oxygen == null) return false;
         oxygen.RefillFromSpareTank(amount);
+        return true;
+    }
+
+    /// <summary>
+    /// Slot'tan count kadar item tüketir — sahneye prefab BIRAKMAZ, grid'i temizler.
+    /// LiftBagDeployer gibi sistemler kullanır (DropSlot'tan farkı: drop spawn yok).
+    /// </summary>
+    public bool ConsumeSlot(int index, int count = 1)
+    {
+        if (index >= slots.Count) return false;
+
+        var slot = slots[index];
+        if (slot.IsEmpty || slot.Count < count) return false;
+
+        slot.Count -= count;
+        if (slot.Count <= 0)
+            RemoveSlot(slot);
+
+        OnInventoryChanged?.Invoke();
         return true;
     }
 

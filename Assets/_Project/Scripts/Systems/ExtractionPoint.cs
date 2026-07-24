@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using UnityEngine;
 
 /// <summary>
@@ -15,6 +16,13 @@ public class ExtractionPoint : MonoBehaviour
     [Header("Activation")]
     [SerializeField] private float activationDuration = 8f; // Çıkış için bekleme süresi
     [SerializeField] private bool cancelOnLeave = true;     // Alandan çıkınca iptal
+
+    private void Start()
+    {
+        // Kendini RunManager'a kaydet — ayrı bootstrap script gerekmez
+        if (RunManager.Instance != null)
+            RunManager.Instance.RegisterExtractionPoint(this);
+    }
 
     private bool playerInZone = false;
     private bool isActivating = false;

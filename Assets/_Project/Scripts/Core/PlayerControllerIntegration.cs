@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 
 /// <summary>
@@ -24,6 +25,13 @@ public class PlayerControllerIntegration : MonoBehaviour
     [Header("Bandage Movement Penalty")]
     [SerializeField] private float bandagingMoveMultiplier = 0.3f;
 
+    [Header("Carry Capacity (Weight)")]
+    [Tooltip("Ağırlık → hız çarpanı eğrisi. X: taşınan ağırlık (kg), Y: hız çarpanı.")]
+    [SerializeField] private AnimationCurve weightSpeedCurve = AnimationCurve.Linear(0f, 1f, 30f, 0.6f);
+    [SerializeField] private float overweightThreshold = 30f; // üstü = aşırı yük uyarısı
+
+    public event Action OnOverweight; // UI bağlanır
+
     [Header("Movement Thresholds")]
     [SerializeField] private float moveThreshold = 0.2f; // m/s — altı idle sayılır
 
@@ -31,9 +39,11 @@ public class PlayerControllerIntegration : MonoBehaviour
     private OxygenSystem oxygenSystem;
     private PanicState panicState;
     private InjurySystem injurySystem;
+    private InventorySystem inventorySystem;
     private UnderwaterExtraction.Core.PlayerController playerController;
 
     private float combatTimer = 0f;
+    private bool overweightWarned = false;
 
     /// <summary>
     /// PlayerController hareket hızını bununla çarpar.
@@ -47,6 +57,7 @@ public class PlayerControllerIntegration : MonoBehaviour
         oxygenSystem = GetComponent<OxygenSystem>();
         panicState = GetComponent<PanicState>();
         injurySystem = GetComponent<InjurySystem>();
+        inventorySystem = GetComponent<InventorySystem>();
         playerController = GetComponent<UnderwaterExtraction.Core.PlayerController>();
 
         if (weapon == null)
@@ -107,6 +118,23 @@ public class PlayerControllerIntegration : MonoBehaviour
             multiplier *= injurySystem.MovementMultiplier;
             if (injurySystem.IsBandaging)
                 multiplier *= bandagingMoveMultiplier;
+        }
+
+        // 5) TAŞIMA AĞIRLIĞI — envanter ağırlığı hızı düşürür
+        if (inventorySystem != null)
+        {
+            float totalWeight = inventorySystem.GetTotalWeight();
+            multiplier *= weightSpeedCurve.Evaluate(totalWeight);
+
+            if (totalWeight > overweightThreshold && !overweightWarned)
+            {
+                overweightWarned = true;
+                OnOverweight?.Invoke();
+            }
+            else if (totalWeight <= overweightThreshold)
+            {
+                overweightWarned = false;
+            }
         }
 
         SpeedMultiplier = multiplier;

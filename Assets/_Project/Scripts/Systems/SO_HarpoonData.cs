@@ -1,11 +1,9 @@
 using UnityEngine;
 
 /// <summary>
-/// Zıpkın silahı verisi. SO_ItemData'dan türer (envanter + loot uyumluluğu).
+/// REFACTOR: Artık SO_ItemData'dan türüyor (envanter + loot uyumluluğu).
 /// ItemName/Weight/Icon/IsStackable/WorldPrefab/RarityWeight base'ten miras.
 /// Zıpkın stack'lenmez → IsStackable = false (inspector'da default bırak).
-/// WorldPrefab (base) drop edilen zıpkın item'ıdır; ProjectilePrefab
-/// ateşlenince uçan mermidir — ayrı kavramlar.
 /// </summary>
 [CreateAssetMenu(fileName = "SO_HarpoonData_", menuName = "UnderwaterExtraction/HarpoonData")]
 public class SO_HarpoonData : SO_ItemData

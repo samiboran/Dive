@@ -37,20 +37,20 @@
 ```
 Assets/_Project/
 ├── Scripts/
-│   ├── Core/          - PlayerController, PlayerControllerIntegration, CameraSystem, InputManager
-│   ├── Systems/       - OxygenSystem, PlayerHealth, RefillStation, InventorySystem, WorldItemPickup, PanicState, InjurySystem, AdrenalineItem, LootManager, Economy, Decompression
-│   ├── Combat/        - HarpoonWeapon, HarpoonProjectile, HarpoonBlocker, HarpoonPickup
-│   ├── Data/          - SO_ItemData, SO_ConsumableItemData, SO_HarpoonData, SO_TankData, SO_LootTableData (ScriptableObjects)
-│   ├── Interfaces/    - IDamageable
-│   ├── AI/            - BotDiverAI, SharkBehavior, PatrolSystem, AIPerception
-│   ├── Extraction/    - ExtractionPoint, RunManager
-│   └── UI/            - HUDController, InventoryUI, MenuSystem, NotificationManager
+│   ├── Core/          - PlayerController, PlayerControllerIntegration, PlayerHealth, IDamageable, InjurySystem, GameFlowController
+│   ├── Systems/       - OxygenSystem, RefillStation, InventorySystem, WorldItemPickup, PanicState, LootManager, LootSpawnPoint, ExtractionPoint, RunManager, StashSystem, ItemDatabase, SaveSystem, LiftBalloon, LiftBagDeployer, AirPocketVolume, DrowningHandler, SO_ItemData/SO_ConsumableItemData/SO_HarpoonData/SO_TankData/SO_LootTableData (ScriptableObjects)
+│   ├── Combat/        - HarpoonWeapon, HarpoonProjectile, HarpoonBlocker, HarpoonPickup moved to Systems/
+│   ├── AI/            - SharkBehavior (BotDiverAI, PatrolSystem, AIPerception henüz yok)
+│   └── UI/            - GridInventoryUI, DraggableItemIcon, StashMenuUI (HUDController, InventoryUI HUD'u, MenuSystem, NotificationManager henüz yok)
 ├── Prefabs/           - PR_ prefix (e.g., PR_Player)
 ├── Scenes/            - MainMenu, Map_SunkenShip_01, Map_Reef_01, Hideout
 ├── Art/               - Models, textures, animations, materials
 ├── Audio/             - SFX, ambient underwater sounds, music
 ├── Materials/         - URP materials for underwater environment
 └── Physics/           - Physics materials, buoyancy profiles
+```
+> Not: `Data/`, `Interfaces/`, `Extraction/` klasörleri kaldırıldı — içerikleri
+> yukarıdaki `Core/`/`Systems/` altına taşındı (bkz. PROJECT_STATE.md 🧱).
 
 Docs/
 ├── CONTEXT.md         - Architecture summary for AI sessions

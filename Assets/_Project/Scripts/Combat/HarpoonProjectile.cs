@@ -58,6 +58,18 @@ public class HarpoonProjectile : MonoBehaviour
         }
 
         // Hit entity
+        // Hit-zone: "Head" tag'li child collider'a çarpıldıysa kafa vuruşu
+        if (other.CompareTag("Head"))
+        {
+            var shark = other.GetComponentInParent<SharkBehavior>();
+            if (shark != null)
+            {
+                shark.HandleHeadShot(damage);
+                StickToSurface(transform.position, -fireDirection);
+                return;
+            }
+        }
+
         var damageable = other.GetComponent<IDamageable>();
         if (damageable != null)
         {
