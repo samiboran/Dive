@@ -1,29 +1,20 @@
 using UnityEngine;
 
 /// <summary>
-/// Zıpkın silahı verisi. SO_ItemData'dan türer ki envanter/loot sistemine
-/// diğer item'lar gibi girebilsin. WorldPrefab (base) drop edilen zıpkın
-/// item'ıdır; ProjectilePrefab ateşlenince uçan mermidir — ayrı kavramlar.
+/// Zıpkın silahı verisi. SO_ItemData'dan türer (envanter + loot uyumluluğu).
+/// ItemName/Weight/Icon/IsStackable/WorldPrefab/RarityWeight base'ten miras.
+/// Zıpkın stack'lenmez → IsStackable = false (inspector'da default bırak).
+/// WorldPrefab (base) drop edilen zıpkın item'ıdır; ProjectilePrefab
+/// ateşlenince uçan mermidir — ayrı kavramlar.
 /// </summary>
-[CreateAssetMenu(fileName = "SO_HarpoonData", menuName = "UnderwaterExtraction/Harpoon Data")]
+[CreateAssetMenu(fileName = "SO_HarpoonData_", menuName = "UnderwaterExtraction/HarpoonData")]
 public class SO_HarpoonData : SO_ItemData
 {
-    [Header("Combat")]
-    [SerializeField] private float damage = 35f;
-    [SerializeField] private float range = 15f;
-    [SerializeField] private float projectileSpeed = 25f;
-
-    [Header("Firing")]
-    [SerializeField] private float fireRate = 1f; // shots per second
-    [SerializeField] private float reloadDuration = 1.2f;
-
-    [Header("Prefab")]
-    [SerializeField] private GameObject projectilePrefab;
-
-    public float Damage => damage;
-    public float Range => range;
-    public float ProjectileSpeed => projectileSpeed;
-    public float FireRate => fireRate;
-    public float ReloadDuration => reloadDuration;
-    public GameObject ProjectilePrefab => projectilePrefab;
+    [field: SerializeField] public string HarpoonName { get; private set; } = "Basic Harpoon";
+    [field: SerializeField] public float Range { get; private set; } = 25f;
+    [field: SerializeField] public float Damage { get; private set; } = 35f;
+    [field: SerializeField] public float FireRate { get; private set; } = 1.2f; // shots per second
+    [field: SerializeField] public float ReloadDuration { get; private set; } = 2.5f;
+    [field: SerializeField] public float ProjectileSpeed { get; private set; } = 30f;
+    [field: SerializeField] public GameObject ProjectilePrefab { get; private set; }
 }

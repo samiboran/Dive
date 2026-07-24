@@ -26,7 +26,7 @@
 | RefillStation | `Systems/RefillStation.cs` | O2 + zıpkın dolumu, E ile etkileşim, `GetComponent`→`GetComponentInChildren` fallback (silah player root'ta da child'da da olsa çalışır) |
 | PlayerHealth / IDamageable | `Systems/PlayerHealth.cs`, `Interfaces/IDamageable.cs` | Hasar arayüzü + stub can sistemi |
 | PlayerControllerIntegration | `Core/PlayerControllerIntegration.cs` | Oxygen/Panic/Injury ↔ hareket köprüsü, combat timer, `SpeedMultiplier` artık `PlayerController.ApplyMovement()`'ta gerçekten çarpılıyor |
-| SO_HarpoonData / SO_TankData | `Data/SO_HarpoonData.cs`, `Data/SO_TankData.cs` | `SO_ItemData`'dan türer (envanter/loot uyumlu) — sınıflar hazır, asset instance'ları henüz Editor'de oluşturulmadı |
+| SO_HarpoonData / SO_TankData | `Data/SO_HarpoonData.cs`, `Data/SO_TankData.cs` | `SO_ItemData`'dan türer (envanter/loot uyumlu), `[field: SerializeField]` property stiline geçti (SO_ItemData/SO_ConsumableItemData ile tutarlı). Tank artık `TierName`/`TierLevel` taşıyor, harpoon `HarpoonName` taşıyor — asset instance'ları henüz Editor'de oluşturulmadı |
 | SO_ItemData / SO_ConsumableItemData | `Data/SO_ItemData.cs`, `Data/SO_ConsumableItemData.cs` | Envanterdeki tüm item'ların base'i; Consumable alt sınıfı Bandage/AdrenalineShot/SpareTank tiplerini taşır |
 | WorldItemPickup | `Systems/WorldItemPickup.cs` | Sahnede duran alınabilir item; InventorySystem trigger'ı bunu bulur, drop edilenler de buradan spawn olur |
 | InventorySystem | `Systems/InventorySystem.cs` | 5 slot, E ile pickup / Q ile drop, stack'leme, `UseSelectedConsumable()` ile Bandage/AdrenalineShot/SpareTank'ı InjurySystem/PanicState/OxygenSystem'e delege eder, `ClearAll()` (RunManager kullanır) |
