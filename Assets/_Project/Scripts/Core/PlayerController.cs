@@ -33,6 +33,7 @@ namespace UnderwaterExtraction.Core
         [SerializeField] private Transform cameraTransform;
 
         private Rigidbody rb;
+        private PlayerControllerIntegration integration;
         private Vector2 moveInput;
         private float verticalInput;
         private Vector2 lookInput;
@@ -41,9 +42,13 @@ namespace UnderwaterExtraction.Core
 
         private const float GRAVITY = -9.81f;
 
+        /// <summary>Depth below the water surface (0 at surface, increasing going down). Shared with PlayerControllerIntegration for oxygen depth calculations.</summary>
+        public float DepthBelowSurface => Mathf.Max(0f, waterSurfaceHeight - transform.position.y);
+
         private void Awake()
         {
             rb = GetComponent<Rigidbody>();
+            integration = GetComponent<PlayerControllerIntegration>();
             ConfigureRigidbody();
 
             if (cameraTransform == null)
@@ -123,11 +128,14 @@ namespace UnderwaterExtraction.Core
             // Flatten forward for horizontal movement (don't climb/dive with forward)
             Vector3 flatForward = new Vector3(forward.x, 0, forward.z).normalized;
 
+            // Panic/injury/bandage speed penalty or boost from PlayerControllerIntegration, if present
+            float speedMultiplier = integration != null ? integration.SpeedMultiplier : 1f;
+
             // Calculate horizontal input direction
-            Vector3 horizontalVelocity = (flatForward * moveInput.y + right * moveInput.x) * swimSpeed;
+            Vector3 horizontalVelocity = (flatForward * moveInput.y + right * moveInput.x) * swimSpeed * speedMultiplier;
 
             // Calculate vertical velocity
-            float verticalVelocity = verticalInput * verticalSpeed;
+            float verticalVelocity = verticalInput * verticalSpeed * speedMultiplier;
 
             // Combine velocities
             Vector3 desiredVelocity = new Vector3(horizontalVelocity.x, verticalVelocity, horizontalVelocity.z);

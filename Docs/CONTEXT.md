@@ -32,8 +32,10 @@
 ```
 Assets/_Project/
 ├── Scripts/
-│   ├── Core/          - PlayerController, CameraSystem, InputManager
-│   ├── Systems/       - Oxygen, Inventory, Loot, Economy, Health, Decompression
+│   ├── Core/          - PlayerController, PlayerControllerIntegration, CameraSystem, InputManager
+│   ├── Systems/       - OxygenSystem, PlayerHealth, RefillStation, Inventory, Loot, Economy, Decompression
+│   ├── Combat/        - HarpoonWeapon, HarpoonProjectile
+│   ├── Interfaces/    - IDamageable
 │   ├── AI/            - BotDiverAI, SharkBehavior, PatrolSystem, AIPerception
 │   ├── Extraction/    - ExtractionPoint, RunManager, SessionTimer, RaidInitializer
 │   └── UI/            - HUDController, InventoryUI, MenuSystem, NotificationManager
@@ -173,17 +175,27 @@ Docs/
 
 ### Planned Systems
 
-| System | Category | Key Mechanics |
-|--------|----------|---------------|
-| OxygenSystem | Systems | Depletion over time, depth affects consumption, refill stations |
-| DecompressionSystem | Systems | Ascent speed tracking, sickness penalty, required stops |
-| InventorySystem | Systems | Grid/slot-based, weight affects movement |
-| LootManager | Systems | Procedural spawn, rarity weights, zone-based pools |
-| EconomyManager | Systems | Buy/sell, stash value, insurance, flea market |
-| SharkBehavior | AI | Patrol paths, aggro radius, attack patterns |
-| BotDiverAI | AI | Harpoon combat, cover seeking, looting |
-| ExtractionPoint | Extraction | Activation timer, contested zones, conditional extraction |
-| RunManager | Extraction | Session init, gear loading, death handling |
+| System | Category | Key Mechanics | Status |
+|--------|----------|---------------|--------|
+| OxygenSystem | Systems | Depletion over time, depth affects consumption, refill stations | ✅ Implemented |
+| PlayerHealth | Systems | Basic damage/heal, IDamageable | ✅ Implemented |
+| RefillStation | Systems | Trigger + E interact, refills oxygen and harpoons | ✅ Implemented |
+| PlayerControllerIntegration | Core | Bridges PlayerController with Oxygen/Panic/Injury (movement state, combat timer, speed multiplier) | ✅ Implemented — depends on PanicState/InjurySystem (not yet in repo) |
+| HarpoonWeapon | Combat | Fire/reload, ammo count, events | ✅ Implemented — depends on SO_HarpoonData (not yet in repo) |
+| HarpoonProjectile | Combat | Flight, hit detection, sticks to surfaces, pickup | ✅ Implemented — `PickUp()` has no caller yet (needs an interact script) |
+| DecompressionSystem | Systems | Ascent speed tracking, sickness penalty, required stops | ⬜ Planned |
+| InventorySystem | Systems | Grid/slot-based, weight affects movement | ⬜ Planned |
+| LootManager | Systems | Procedural spawn, rarity weights, zone-based pools | ⬜ Planned |
+| EconomyManager | Systems | Buy/sell, stash value, insurance, flea market | ⬜ Planned |
+| PanicState | Systems | Movement speed boost/penalty under stress | ⬜ Planned — referenced by PlayerControllerIntegration but not yet created |
+| InjurySystem | Systems | Movement penalty + bandaging state | ⬜ Planned — referenced by PlayerControllerIntegration but not yet created |
+| HarpoonBlocker | Combat | Blocks/deflects incoming harpoons | ⬜ Planned — referenced by HarpoonProjectile but not yet created |
+| SharkBehavior | AI | Patrol paths, aggro radius, attack patterns | ⬜ Planned |
+| BotDiverAI | AI | Harpoon combat, cover seeking, looting | ⬜ Planned |
+| ExtractionPoint | Extraction | Activation timer, contested zones, conditional extraction | ⬜ Planned |
+| RunManager | Extraction | Session init, gear loading, death handling | ⬜ Planned |
+
+**⚠️ Compile blocker:** `HarpoonWeapon` needs `SO_HarpoonData` (ScriptableObject: Damage, FireRate, ReloadDuration, Range, ProjectileSpeed, ProjectilePrefab) and `OxygenSystem` needs `SO_TankData` (ScriptableObject: CapacitySeconds) — neither exists in the repo yet. The project will not compile until these two ScriptableObject classes (plus `PanicState`, `InjurySystem`, `HarpoonBlocker` referenced above) are added.
 
 ---
 
@@ -264,16 +276,23 @@ Docs/
 - [x] Naming conventions established
 - [x] CONTEXT.md structure defined
 - [x] PlayerController.cs v0.1 implemented (`Assets/_Project/Scripts/Core/PlayerController.cs`)
+- [x] OxygenSystem, PlayerHealth, RefillStation implemented (`Scripts/Systems/`)
+- [x] HarpoonWeapon, HarpoonProjectile implemented (`Scripts/Combat/`)
+- [x] PlayerControllerIntegration implemented, wired into PlayerController via `SpeedMultiplier` (`Scripts/Core/`)
+- [x] IDamageable interface implemented (`Scripts/Interfaces/`)
 
 ### 🔄 In Progress
-- [ ] Unity project creation (2022.3 LTS + URP) - script exists, project itself still needs to be created via Unity Hub/Editor
+- [ ] Unity project creation (2022.3 LTS + URP) - scripts exist, project itself still needs to be created via Unity Hub/Editor
 - [ ] Input Actions asset creation (PlayerInputActions.inputactions)
 - [ ] Test scene creation and movement testing
+- [ ] **Blocking:** create `SO_HarpoonData` and `SO_TankData` ScriptableObjects, plus `PanicState`, `InjurySystem`, `HarpoonBlocker` — repo won't compile without them (see Planned Systems table above)
+- [ ] Interact script for picking up stuck `HarpoonProjectile`s (calls `PickUp()` — currently has no caller)
 
 ### ⏭️ Next Session
 - Create the actual Unity project (2022.3 LTS + URP) and drop this repo's `Assets/` into it
+- Add the missing `SO_HarpoonData`/`SO_TankData`/`PanicState`/`InjurySystem`/`HarpoonBlocker` scripts so the project compiles
 - Input Actions asset setup (Move, Vertical, Look)
-- Wire up PR_Player prefab (Rigidbody, Capsule Collider, PlayerInput, PlayerController, child Camera)
+- Wire up PR_Player prefab (Rigidbody, Capsule Collider, PlayerInput, PlayerController, PlayerControllerIntegration, OxygenSystem, PlayerHealth, HarpoonWeapon, child Camera)
 - Build test scene (water cube + ground) and playtest movement/buoyancy feel
 
 ---
