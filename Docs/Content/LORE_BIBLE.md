@@ -41,6 +41,13 @@ non-negotiable unless the user explicitly reconsiders them)*
 - **Threats are naturalistic, not supernatural:** sharks (hunger-driven AI, not
   monsters with intent) and rival divers (other people doing the same
   desperate job you are, not faction soldiers). No sci-fi creatures, no magic.
+- **DiveComputerAI, in-world:** a standard-issue wrist dive computer, no
+  name/callsign. Deliberately impersonal — telemetry and information
+  retrieval only, explicitly *not* a companion or an AI with a personality.
+  When asked who funds/runs the operation, it deflects ("outside operational
+  scope") rather than answering — this response *pattern* is canon, the
+  underlying answer to who funds the operation is still open below.
+  *(Established while drafting `Docs/Content/DiveComputerQA.md`.)*
 
 ## Open Questions — not yet decided
 
@@ -57,8 +64,6 @@ while drafting DiveComputerAI entry X")*
   this light — the game has no dialogue/cutscenes to deliver a backstory
   through, so this should only ever surface as implication, e.g. in
   DiveComputerAI tone or item flavor text.)
-- What is DiveComputerAI, in-world? (Company-issued dive computer? Personal
-  gear? Does it have a name/callsign, or is it deliberately impersonal?)
 - Why is *this specific* wreck/reef being salvaged — is it recent, historic,
   contested, cursed-by-reputation-only (never actually supernatural)?
 
