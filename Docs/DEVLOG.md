@@ -43,6 +43,26 @@
 
 ---
 
+## 2026-07-26 — Day 2
+
+**Summary:**
+- Wrote the VFX/atmosphere direction spec: fog density and color grading scale
+  with floor risk, regulator bubble loop acts as the tension metronome, ambient
+  removal treated as an effect in its own right
+- Constrained VFX to a solo-dev budget: LUT/vignette blends on a small fixed set
+  of volumes instead of per-trigger particle prefabs
+- Drafted DiveComputerAI Q&A content (keyword-matched, pre-written, no live AI)
+  in a deliberately cold telemetry voice; locked its in-world identity as a
+  standard-issue unnamed unit
+- Added a LORE_BIBLE scaffold so Writer-role sessions stay consistent
+
+**X post(s):**
+> Gün 2 — Bugün VFX/atmosfer yönünü spec'ledim: sis yoğunluğu ve renk grading kata göre artıyor, oyuncunun kendi nefes sesi gerilimin metronomu oluyor. Solo-dev bütçesine göre ucuz, tekrar kullanılabilir efektler seçtim. #gamedev #indiedev #devlog
+
+> Gün 2 — Bilek dalış bilgisayarı için soru-cevap içeriği yazdım (gerçek AI değil, önceden yazılmış — kelime eşleşmeli). Soğuk, resmi bir telemetri sesi verdim. Tutarlılık için bir 'lore bible' dosyası da açtım. #indiegame #gamedesign #soloDev
+
+---
+
 ## 2026-07-25 — Day 1
 
 **Summary:**
